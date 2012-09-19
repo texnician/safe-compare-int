@@ -14,8 +14,8 @@ struct __false_type
 template<typename L, typename R>
 struct __same_sign : public __false_type {};
 
-template<>
-struct __same_sign<int, int> : public __true_type {};
+template<typename T>
+struct __same_sign<T, T> : public __true_type {};
 
 template<typename L, typename R>
 struct __signed_unsigned : public __false_type {};
