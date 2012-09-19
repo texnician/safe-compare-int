@@ -1,0 +1,7 @@
+Debug/*
+*.sdf
+*.opensdf
+*.suo
+*.obj
+*/Debug/*
+*.filters
