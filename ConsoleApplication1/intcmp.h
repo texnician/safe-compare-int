@@ -1,74 +1,88 @@
 #ifndef INTCMP_H_
 #define INTCMP_H_
 
-struct __true_type
+namespace ambition
 {
-    static const bool value = true;
+namespace internal
+{
+struct true_type
+{
+  static const bool value = true;
 };
 
-struct __false_type
+struct false_type
 {
-    static const bool value = false;
+  static const bool value = false;
 };
-
-template<typename L, typename R>
-struct __same_sign : public __false_type {};
 
 template<typename T>
-struct __same_sign<T, T> : public __true_type {};
-
-template<typename L, typename R>
-struct __signed_unsigned : public __false_type {};
+struct signed_int : public true_type
+{};
 
 template<>
-struct __signed_unsigned<int, unsigned int> : public __true_type {};
+struct signed_int<unsigned char> : public false_type
+{};
 
-template<typename L, typename R, bool same_sign>
-struct __IntCmp;
+template<>
+struct signed_int<unsigned short> : public false_type
+{};
 
-template<typename L, typename R, bool signed_unsigned>
-struct __IntCmpDiffSign;
+template<>
+struct signed_int<unsigned int> : public false_type
+{};
 
-template<typename L, typename R>
-struct __IntCmp<L, R, true>
+template<>
+struct signed_int<unsigned long> : public false_type
+{};
+
+template<>
+struct signed_int<unsigned long long> : public false_type
+{};
+
+template<typename L, bool lsigned, typename R, bool rsigned>
+struct SafeIntCmp
 {
-    static inline int Cmp(L lhs, R rhs)
-        {
-            return lhs < rhs ? -1 : (rhs < lhs ? 1 : 0);
-        }
+  // default implementation for same sign
+  static inline int Cmp(L lhs, R rhs)
+    {
+      return lhs < rhs ? -1 : (rhs < lhs ? 1 : 0);
+    }
 };
 
 template<typename L, typename R>
-struct __IntCmpDiffSign<L, R, true>
+struct SafeIntCmp<L, true, R, false>
 {
-    static inline int Cmp(L lhs, R rhs)
-        {
-            return lhs < 0 ? -1 : __IntCmp<L, R, __same_sign<L, R>::value>::Cmp((R)lhs, rhs);
-        }
+  static inline int Cmp(L lhs, R rhs)
+    {
+      return (lhs < 0) ? -1 : SafeIntCmp<R, signed_int<R>::value, R, signed_int<R>::value>::Cmp((R)lhs, rhs);
+    }
 };
 
 template<typename L, typename R>
-struct __IntCmpDiffSign<L, R, false>
+struct SafeIntCmp<L, false, R, true>
 {
-    static inline int Cmp(L lhs, R rhs)
-        {
-            return __IntCmpDiffSign<R, L, __signed_unsigned<R, L>::value>::Cmp(rhs, lhs) * -1;
-        }
+  // unsigned cmp signed
+  static inline int Cmp(L lhs, R rhs)
+    {
+      return -1 * SafeIntCmp<R, signed_int<R>::value, L, signed_int<L>::value>::Cmp(rhs, lhs);
+    }
 };
 
-template<typename L, typename R>
-struct __IntCmp<L, R, false>
-{
-    static inline int Cmp(L lhs, R rhs)
-        {
-            return __IntCmpDiffSign<L, R, __signed_unsigned<L, R>::value>::Cmp(lhs, rhs);
-        }
-};
+} // namespace internal
+} // namespace ambition
 
 template<typename L, typename R>
 inline int IntCmp(L lhs, R rhs)
 {
-    return __IntCmp<L, R, __same_sign<L, R>::value>::Cmp(lhs, rhs);
+  using namespace ::ambition;
+  return internal::SafeIntCmp<L, internal::signed_int<L>::value, R, internal::signed_int<R>::value>::Cmp(lhs, rhs);
 }
+
+#define IntEq(a, b) (IntCmp((a), (b)) == 0) // a == b
+#define IntNe(a, b) (IntCmp((a), (b)) != 0) // a != b
+#define IntLt(a, b) (IntCmp((a), (b)) < 0) // a < b
+#define IntLe(a, b) (IntCmp((a), (b)) <= 0) // a <= b
+#define IntGt(a, b) (IntCmp((a), (b)) > 0) // a > b
+#define IntGe(a, b) (IntCmp((a), (b)) >= 0) // a >= b
 
 #endif  // INTCMP_H_
