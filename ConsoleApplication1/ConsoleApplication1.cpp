@@ -1,11 +1,17 @@
 // ConsoleApplication1.cpp : 定义控制台应用程序的入口点。
 //
 
+#ifdef _MSC_VER
+#include "stdafx.h"
+#endif
 #include <stdio.h>
 #include <string>
 #include <stdint.h>
 #include "intcmp.h"
 
+#ifdef _MSC_VER
+extern void RunTest();
+#endif
 int main(int argc, char* argv[])
 {
   printf("%d\n", IntLt(1, 2));
@@ -20,7 +26,7 @@ int main(int argc, char* argv[])
   printf("%d\n", IntGt(i64, i32));
   printf("%d\n", IntLt(i16, i32));
   size_t a = 100;
-  ssize_t b = -9;
+  signed long b = -9;
   int c = 17;
   printf("%d\n", IntGt(a, b));
   printf("%d\n", IntLt(b, a));
@@ -29,5 +35,9 @@ int main(int argc, char* argv[])
   printf("%d\n", IntLe(b, 'a'));
   printf("%d\n", IntGt(c, i64));
   printf("%d\n", IntGt(uint32_t(18), c));
+  printf("%d\n", sizeof(long long));
+#ifdef _MSC_VER
+  RunTest();
+#endif
   return 0;
 }

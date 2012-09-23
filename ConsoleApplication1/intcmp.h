@@ -39,6 +39,42 @@ template<>
 struct signed_int<unsigned long long> : public false_type
 {};
 
+template<typename T>
+struct safe_unsigned_cast
+{
+    typedef T type;
+};
+
+template<>
+struct safe_unsigned_cast<char>
+{
+    typedef unsigned char type;
+};
+
+template<>
+struct safe_unsigned_cast<short>
+{
+    typedef unsigned short type;
+};
+
+template<>
+struct safe_unsigned_cast<int>
+{
+    typedef unsigned int type;
+};
+
+template<>
+struct safe_unsigned_cast<long>
+{
+    typedef unsigned long type;
+};
+
+template<>
+struct safe_unsigned_cast<long long>
+{
+    typedef unsigned long long type;
+};
+
 template<typename L, bool lsigned, typename R, bool rsigned>
 struct SafeIntCmp
 {
@@ -54,7 +90,8 @@ struct SafeIntCmp<L, true, R, false>
 {
   static inline int Cmp(L lhs, R rhs)
     {
-      return (lhs < 0) ? -1 : SafeIntCmp<R, signed_int<R>::value, R, signed_int<R>::value>::Cmp((R)lhs, rhs);
+        typedef typename safe_unsigned_cast<L>::type UL;
+        return (lhs < 0) ? -1 : SafeIntCmp<UL, signed_int<UL>::value, R, signed_int<R>::value>::Cmp((UL)lhs, rhs);
     }
 };
 
