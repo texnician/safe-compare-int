@@ -87,8 +87,97 @@ class UI16(object):
                 pow(2, 8) - 1,
                 random.randrange(pow(2, 8), cls.max),
                 cls.max]
-                
-INT_TYPES = [I8, UI8, I16, UI16]
+
+class I32(object):
+    ctp = 'int'
+    min = -pow(2, 31)
+    max = pow(2, 31) - 1
+
+    @classmethod
+    def Literal(cls, val):
+        return '{0}'.format(val)
+
+    @classmethod
+    def RandSeq(cls):
+        return list(chain([cls.min,
+                           random.randrange(cls.min + 1, I16.min)],
+                          I16.RandSeq(),
+                          [random.randrange(I16.max+1, cls.max),
+                           cls.max]))
+class UI32(object):
+    ctp = 'unsigned int'
+    min = 0
+    max = pow(2, 32) - 1
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}U)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return list(chain(UI16.RandSeq(),
+                          [random.randrange(UI16.max + 1, cls.max),
+                           cls.max]))
+
+class I64(object):
+    ctp = 'long long'
+    min = -pow(2, 63)
+    max = pow(2, 63) - 1
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}LL)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return list(chain([cls.min,
+                           random.randrange(cls.min + 1, I32.min)],
+                          I32.RandSeq(),
+                          [random.randrange(I32.max + 1, cls.max),
+                           cls.max]))
+
+class UI64(object):
+    ctp = 'unsigned long long'
+    min = 0
+    max = pow(2, 64) - 1
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}ULL)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return list(chain(UI32.RandSeq(),
+                          [random.randrange(UI32.max + 1, cls.max),
+                           cls.max]))
+
+class L32(object):
+    ctp = 'long'
+    min = I32.min
+    max = I32.max
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}L)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return I32.RandSeq()
+
+class UL32(object):
+    ctp = 'unsigned long'
+    min = UI32.min
+    max = UI32.max
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}UL)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return UI32.RandSeq()
+
+INT_TYPES = [I8, UI8, I16, UI16, I32, UI32, L32, UL32, I64, UI64]
 
 def IntEq(lhs, rhs):
     return lhs == rhs
@@ -129,6 +218,19 @@ def ValueCombine(tp1, tp2):
 def TestList(types):
     return [[x, y, ValueCombine(x, y)] for x, y in TypeCombinations(types)]
 
+def PredPermutations(n):
+    if n == 1:
+        return [[True], [False]]
+    else:
+        sub = PredPermutations(n - 1)
+        return list(chain(map(lambda x: list(chain([True], x)), sub),
+                          map(lambda x: list(chain([False], x)), sub)))
+
+def GenPredCombination(pred):
+    def fn(p, f):
+        return '{0}{1}((lhs), (rhs))'.format('' if p else '!', f.__name__)
+    return '''#define {0}_{1}_{2}_{3}_{4}_{5}(lhs, rhs) ({6} && {7} && {8} && {9} && {10} && {11})'''.format(*chain(( 'T' if x else 'F' for x in pred),
+                                                                                                                    ( fn(p, f) for p, f in izip(pred, OPS))))
 def TestCase(types):
     result = []
     for ltp, rtp, cases in TestList(types):
@@ -151,4 +253,5 @@ def GenCpp(types):
         of.write('}\n')
 
 if __name__ == '__main__':
-    GenCpp(INT_TYPES)
+    # GenCpp(INT_TYPES)
+    print(GenPredCombination(PredPermutations(6)[0]))
