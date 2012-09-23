@@ -95,7 +95,7 @@ class I32(object):
 
     @classmethod
     def Literal(cls, val):
-        return '{0}'.format(val)
+        return '{0}({1})'.format(cls.ctp, val)
 
     @classmethod
     def RandSeq(cls):
@@ -206,6 +206,10 @@ def GenTestCase(ltp, lhs, rtp, rhs):
         return '{0}({1}({2}, {3}));'.format(exp, f.__name__, ltp.Literal(lhs), rtp.Literal(rhs))
     return [ fn(f) for f in OPS ]
 
+def GenShortTestCase(ltp, lhs, rtp, rhs):
+    return ['{0}_{1}_{2}_{3}_{4}_{5}({6}, {7});'.format(*chain(('T' if f(lhs, rhs) else 'F' for f in OPS),
+                                                               (ltp.Literal(lhs), rtp.Literal(rhs),)))]
+
 def TypeCombinations(type_list):
     return permutations(type_list, 2)
 
@@ -226,17 +230,57 @@ def PredPermutations(n):
         return list(chain(map(lambda x: list(chain([True], x)), sub),
                           map(lambda x: list(chain([False], x)), sub)))
 
+def FilterPredPermutations(preds):
+    def by_eq(f):
+        def fn(p):
+            eq = p[0]
+            if eq:
+                return f(p) and not p[1] and not p[2] and p[3] and not p[4] and p[5]
+            else:
+                return f(p) and p[1]
+        return fn
+    def by_ne(f):
+        def fn(p):
+            ne = p[1]
+            if ne:
+                return f(p) and not p[0]
+            else:
+                return f(p) and p[0] and not p[2] and p[3] and not p[4] and p[5]
+        return fn
+    def by_lt(f):
+        def fn(p):
+            lt = p[2]
+            if lt:
+                return f(p) and not p[0] and p[1] and p[3] and not p[4] and not p[5]
+            else:
+                return f(p) and p[5]
+        return fn
+    def by_le_ge(f):
+        def fn(p):
+            le = p[3]
+            ge = p[5]
+            if le and ge:
+                return f(p) and p[0] and not p[1] and not p[2] and not p[4]
+            elif le:
+                return f(p) and p[2] and not p[4]
+            elif ge:
+                return f(p) and not p[2] and p[4]
+            else:
+                return False
+        return fn
+    return filter(by_eq(by_le_ge(by_lt(by_ne(lambda x: True)))), preds)
+
 def GenPredCombination(pred):
     def fn(p, f):
         return '{0}{1}((lhs), (rhs))'.format('' if p else '!', f.__name__)
-    return '''#define {0}_{1}_{2}_{3}_{4}_{5}(lhs, rhs) ({6} && {7} && {8} && {9} && {10} && {11})'''.format(*chain(( 'T' if x else 'F' for x in pred),
-                                                                                                                    ( fn(p, f) for p, f in izip(pred, OPS))))
+    return '''#define {0}_{1}_{2}_{3}_{4}_{5}(lhs, rhs) ASSERT_TRUE(({6} && {7} && {8} && {9} && {10} && {11}))'''.format(*chain(( 'T' if x else 'F' for x in pred),
+                                                                                                                                 ( fn(p, f) for p, f in izip(pred, OPS))))
 def TestCase(types):
     result = []
     for ltp, rtp, cases in TestList(types):
         result.append('// {0} vs {1}'.format(ltp.ctp, rtp.ctp))
         for lhs, rhs in cases:
-            result.extend(GenTestCase(ltp, lhs, rtp, rhs))
+            result.extend(GenShortTestCase(ltp, lhs, rtp, rhs))
     return result
 
 def GenCpp(types):
@@ -247,11 +291,14 @@ def GenCpp(types):
         of.write('#define ASSERT_FALSE(exp) assert((exp) == false)\n')
         of.write('#endif\n')
         of.write('#include "intcmp.h"\n')
+        of.write('\n')
+        of.write('\n'.join((GenPredCombination(x) for x in FilterPredPermutations(PredPermutations(6)))))
+        of.write('\n')
+        of.write('\n')
         of.write('void RunTest()\n')
         of.write('{\n')
-        of.write('\n'.join(TestCase(INT_TYPES)))
+        of.write('\n'.join(('  {0}'.format(x) for x in TestCase(INT_TYPES))))
         of.write('}\n')
 
 if __name__ == '__main__':
-    # GenCpp(INT_TYPES)
-    print(GenPredCombination(PredPermutations(6)[0]))
+    GenCpp(INT_TYPES)
