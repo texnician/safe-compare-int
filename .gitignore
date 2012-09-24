@@ -10,6 +10,7 @@ ConsoleApplication1/ConsoleApplication1
 *.slo
 *.lo
 *.o
+*.d
 
 # Compiled Dynamic libraries
 *.so
