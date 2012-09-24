@@ -177,7 +177,34 @@ class UL32(object):
     def RandSeq(cls):
         return UI32.RandSeq()
 
+class L64(object):
+    ctp = 'long'
+    min = I64.min
+    max = I64.max
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}L)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return I64.RandSeq()
+
+class UL64(object):
+    ctp = 'unsigned long'
+    min = UI64.min
+    max = UI64.max
+
+    @classmethod
+    def Literal(cls, val):
+        return '({0})({1}UL)'.format(cls.ctp, val)
+
+    @classmethod
+    def RandSeq(cls):
+        return UI64.RandSeq()
+
 INT_TYPES = [I8, UI8, I16, UI16, I32, UI32, L32, UL32, I64, UI64]
+LINUX_INT_TYPES = [I8, UI8, I16, UI16, I32, UI32, L64, UL64, I64, UI64]
 
 def IntEq(lhs, rhs):
     return lhs == rhs
@@ -285,7 +312,7 @@ def TestCase(types):
 
 def GenCpp(types):
     with open('test_intcmp.cpp', 'w') as of:
-        of.write('#ifdef _MSC_VER\n')
+        of.write('#if !defined(ASSERT_TRUE) && !defined(ASSERT_FALSE)\n')
         of.write('#include <assert.h>\n')
         of.write('#define ASSERT_TRUE(exp) assert((exp) == true)\n')
         of.write('#define ASSERT_FALSE(exp) assert((exp) == false)\n')
@@ -297,8 +324,9 @@ def GenCpp(types):
         of.write('\n')
         of.write('void RunTest()\n')
         of.write('{\n')
-        of.write('\n'.join(('  {0}'.format(x) for x in TestCase(INT_TYPES))))
+        of.write('\n'.join(('  {0}'.format(x) for x in TestCase(types))))
         of.write('}\n')
 
 if __name__ == '__main__':
-    GenCpp(INT_TYPES)
+    # GenCpp(INT_TYPES)
+    GenCpp(LINUX_INT_TYPES)

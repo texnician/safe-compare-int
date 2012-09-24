@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
   printf("%d\n", IntLe(b, 'a'));
   printf("%d\n", IntGt(c, i64));
   printf("%d\n", IntGt(uint32_t(18), c));
-  printf("%d\n", sizeof(long long));
+  printf("%u\n", sizeof(long long));
 #ifdef _MSC_VER
   RunTest();
 #endif

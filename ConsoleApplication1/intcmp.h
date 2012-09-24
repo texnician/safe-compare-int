@@ -90,7 +90,7 @@ struct SafeIntCmp<L, true, R, false>
 {
   static inline int Cmp(L lhs, R rhs)
     {
-        typedef safe_unsigned_cast<typename L>::type UL;
+        typedef typename safe_unsigned_cast<L>::type UL;
         return (lhs < 0) ? -1 : SafeIntCmp<UL, signed_int<UL>::value, R, signed_int<R>::value>::Cmp((UL)lhs, rhs);
     }
 };
