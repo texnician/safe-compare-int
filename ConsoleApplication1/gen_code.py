@@ -299,9 +299,19 @@ def FilterPredPermutations(preds):
 
 def GenPredCombination(pred):
     def fn(p, f):
-        return '{0}{1}((lhs), (rhs))'.format('' if p else '!', f.__name__)
-    return '''#define {0}_{1}_{2}_{3}_{4}_{5}(lhs, rhs) ASSERT_TRUE(({6} && {7} && {8} && {9} && {10} && {11}))'''.format(*chain(( 'T' if x else 'F' for x in pred),
-                                                                                                                                 ( fn(p, f) for p, f in izip(pred, OPS))))
+        return 'ASSERT_{0}({1}((lhs), (rhs)))'.format('TRUE' if p else 'FALSE', f.__name__)
+    return '''#define {0}_{1}_{2}_{3}_{4}_{5}(lhs, rhs) \\
+  do {{ \\
+    {6}; \\
+    {7}; \\
+    {8}; \\
+    {9}; \\
+    {10}; \\
+    {11}; \\
+  }} while (0)
+'''.format(*chain(( 'T' if x else 'F' for x in pred), ( fn(p, f) for p, f in izip(pred, OPS))))
+
+                                                                           
 def TestCase(types):
     result = []
     for ltp, rtp, cases in TestList(types):
