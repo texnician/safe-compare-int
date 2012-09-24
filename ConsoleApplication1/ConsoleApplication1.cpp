@@ -9,9 +9,9 @@
 #include <stdint.h>
 #include "intcmp.h"
 
-#ifdef _MSC_VER
+
 extern void RunTest();
-#endif
+
 int main(int argc, char* argv[])
 {
   printf("%d\n", IntLt(1, 2));
@@ -36,8 +36,8 @@ int main(int argc, char* argv[])
   printf("%d\n", IntGt(c, i64));
   printf("%d\n", IntGt(uint32_t(18), c));
   printf("%u\n", sizeof(long long));
-#ifdef _MSC_VER
+
   RunTest();
-#endif
+
   return 0;
 }
